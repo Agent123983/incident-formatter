@@ -1,0 +1,24 @@
+
+.grid-container-custom {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    padding: 10px;
+}
+
+.grid-item-custom {
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    font-size: 20px;
+    text-align: center;
+    }
+
+body {
+    min-height: 100%;
+    height: 100vh;
+    width: 100%;
+    padding:0;
+}
+
+html {
+    height: 100%;
+}

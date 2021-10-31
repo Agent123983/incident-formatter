@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!--This file puts the adds the CSS and JS into one file as this is not hosted on any webserver. This can be used as a local device tool for internal use only-->
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
+        integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF"
+        crossorigin="anonymous"></script>
+
+    <title>Incident Formatter</title>
+
+    <style>
+        .grid-container-custom {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            padding: 10px;
+        }
+
+        .grid-item-custom {
+            border: 1px solid rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            font-size: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <nav id="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <img class="navbar-brand"
+            src="https://upload.wikimedia.org/wikipedia/en/thumb/5/54/Geek_Squad_logo_%28new%29.svg/1200px-Geek_Squad_logo_%28new%29.svg.png"
+            style="width: 75px;">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item"><a class="nav-link text-white" href="index.html">Home</a></li>
+            <li class="nav-item"><button class="btn btn-light" value="light" onclick="changeTheme(this)"
+                    id="theme">Light
+                    Mode</button></li>
+        </ul>
+    </nav>
+    <div class="grid-container-custom bg-dark text-white">
+        <div class="grid-item-custom">
+            <h2>List Generator</h2>
+            <textarea name="initialText" id="initialText" class="bg-dark text-white" cols="50" rows="22"></textarea>
+            <br>
+            <button onclick="getList()" class="btn btn-primary">Run</button>
+            <br>
+            <div id="successListNotification"></div>
+
+        </div>
+        <div class="grid-item-custom bg-dark text-white">
+            <h2>Incident Formatter</h2>
+            <textarea name="listText" id="listText" class="bg-dark text-white" cols="50" rows="22"></textarea>
+            <br>
+            <button class="btn btn-warning" onclick="clearTextFields()">Clear All</button>
+            <!-- <button onclick="getFormatting()" class="btn btn-primary">Generate Formatted List</button> -->
+            <br>
+            <div id="successFormatNotification"></div>
+
+        </div>
+        <div class="grid-item-custom bg-dark text-white">
+            <h2>Output</h2>
+            <textarea name="outputText" id="outputText" class="bg-dark text-white" cols="50" rows="10"></textarea>
+            <br>
+            <button onclick="copyToClipboard()" class="btn btn-primary">Copy to Clipboard</button>
+            <br>
+            <div id="copyNotification"></div>
+            <br>
+            <h2>No Service Orders Found</h2>
+            <textarea name="outputTextNoSO" id="outputTextNoSO" class="bg-dark text-white" cols="30"
+                rows="6"></textarea>
+            <div id="finishedNotification"></div>
+        </div>
+    </div>
+    <div id="footer" class="footer bg-dark text-white fixed-bottom" style="height: 55px;">
+        <input hidden>
+    </div>
+
+    <script>
+        /**
+     * Generates list from initial data pull from ServiceNow
+     */
+        function getList() {
+            var input = document.getElementById("initialText");
+            var output = document.getElementById("listText");
+            output.value = "";
+
+            var initialUnfilteredLines = input.value.split("\n");
+            var initialLines = initialUnfilteredLines.filter(function (el) {
+                return el != "";
+            });
+
+            var inputList = new Array();
+            var regexINC = /INC[0-9]{7}/g;
+            var regexSO = /[0-9]{5}\-?[0-9]{9}/g;
+
+            for (i = 0; i < initialLines.length; i++) {
+                var incMatch = regexINC.exec(initialLines[i]);
+                while (incMatch != null) {
+                    inputList.push(incMatch);
+                    incMatch = regexINC.exec(initialLines[i]);
+                }
+
+                var soMatch = regexSO.exec(initialLines[i]);
+                while (soMatch != null) {
+                    inputList.push(soMatch);
+                    soMatch = regexSO.exec(initialLines[i]);
+                }
+            }
+
+            inputList.forEach(function (item) {
+                output.value = output.value + item + "\n";
+            });
+
+            var successListNotification = document.getElementById("successListNotification");
+            var successFormatNotification = document.getElementById("successFormatNotification");
+            successListNotification.innerHTML = "List Successfully Generated!";
+            setTimeout(function () {
+                successListNotification.innerHTML = "";
+            }, 3000);
+            successFormatNotification.innerHTML = "Generating Formatted List....";
+            setTimeout(function () {
+                getFormatting();
+                successFormatNotification.innerHTML = "Successfully Formatted!";
+                setTimeout(function () {
+                    successFormatNotification.innerHTML = "";
+                }, 3000);
+
+            }, 3000);
+
+        }
+
+
+        /**
+         * Generates desired formatted list from input list
+         */
+        function getFormatting() {
+            var input = document.getElementById("listText");
+            var output = document.getElementById("outputText");
+            var outputNoSO = document.getElementById("outputTextNoSO");
+            output.value = "";
+            outputNoSO.value = "";
+
+            var incidentMap = new Map();
+            var unfiltered = input.value.split("\n");
+            var lines = unfiltered.filter(function (el) {
+                return el != "";
+            });
+
+            var currentKey = lines[0];
+            incidentMap.set(currentKey, new Array());
+
+            for (i = 1; i < lines.length; i++) {
+                if (lines[i].startsWith("INC")) {
+                    currentKey = lines[i];
+                    if (!incidentMap.has(currentKey)) {
+                        incidentMap.set(currentKey, new Array());
+                    }
+                } else {
+                    var array = incidentMap.get(currentKey);
+                    if (!array.includes(lines[i])) {
+                        array.push(lines[i]);
+                    }
+                }
+            }
+
+            incidentMap.forEach((values, keys) => {
+                if (values.length == 0) {
+                    outputNoSO.value = outputNoSO.value + keys + "\n";
+                } else {
+                    values.forEach(function (order) {
+                        output.value = output.value + order + "\t" + keys + "\n";
+                    })
+                }
+
+            });
+
+            var successNotification = document.getElementById("successFormatNotification");
+            successNotification.innerHTML = "Successfully formatted!";
+            setTimeout(function () {
+                successNotification.innerHTML = "";
+            }, 3000);
+
+            console.log(incidentMap.get("INC8652200"));
+        }
+
+
+        /**
+         * Copy to Clipboard
+         */
+        function copyToClipboard() {
+            var copyText = document.getElementById("outputText");
+            copyText.select();
+            document.execCommand("copy");
+            var notifications = document.getElementById("copyNotification");
+            notifications.innerHTML = "Copied to Clipboard";
+            setTimeout(function () {
+                notifications.innerHTML = "";
+            }, 3000);
+        }
+
+        /**
+         * Clear Text Fields
+         */
+
+        function clearTextFields() {
+            document.getElementById("initialText").value = " ";
+            document.getElementById("listText").value = " ";
+            document.getElementById("outputText").value = " ";
+            document.getElementById("outputTextNoSO").value = " ";
+        }
+
+        /**
+         * Dark Mode/Theme Changer 
+         * */
+
+        function changeTheme(objButton) {
+            button = document.getElementById("theme");
+            navigation = document.getElementById("navigation");
+            var element = document.body;
+            element.classList.toggle("dark-mode");
+
+            if (objButton.value == "light") {
+                //changing to Light Mode but making button say Dark
+                button.value = "dark";
+
+                btnDark = document.querySelectorAll(".btn-dark");
+                btnDark.forEach(function (btn) {
+                    btn.className = btn.className.replace("btn-dark", "btn-light");
+                });
+
+                textDark = document.querySelectorAll(".text-white, .bg-dark")
+                textDark.forEach(function (txt) {
+                    txt.className = txt.className.replace("text-white", "text-dark")
+                    txt.className = txt.className.replace("bg-dark", "bg-light")
+                })
+
+                button.className = button.className.replace("btn-light", "btn-dark")
+                navigation.className = navigation.className.replace("navbar-dark bg-dark", "navbar-light bg-light")
+                $("#theme").html("Dark Mode");
+            } else {
+                //changing to Dark Mode but making button say Light
+                button.value = "light";
+
+                btnLight = document.querySelectorAll(".btn-light");
+                btnLight.forEach(function (btn) {
+                    btn.className = btn.className.replace("btn-light", "btn-dark");
+                });
+
+                textLight = document.querySelectorAll(".text-dark, .bg-light")
+                textLight.forEach(function (txt) {
+                    txt.className = txt.className.replace("text-dark", "text-white")
+                    txt.className = txt.className.replace("bg-light", "bg-dark")
+                })
+
+                button.className = button.className.replace("btn-dark", "btn-light")
+                navigation.className = navigation.className.replace("navbar-light bg-light", "navbar-dark bg-dark")
+                $("#theme").html("Light Mode");
+            }
+        }
+
+    </script>>
+</body>
+
+</html>
